@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click the Box Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #dashboard {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-left: 20px;
+            z-index: 2;
+        }
+        #game-area-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        #game-area {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            background-color: #ffffff;
+            border: 2px solid #000;
+        }
+        .box {
+            position: absolute;
+            background-color: #3498db;
+            cursor: pointer;
+        }
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #countdown {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+        #preview-box {
+            width: 50px;
+            height: 50px;
+            background-color: #3498db;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="dashboard">
+        <div>
+            <label for="time-input">Enter time (seconds): </label>
+            <input type="number" id="time-input" min="1" />
+        </div>
+        <div>
+            <label for="color-input">Choose box color: </label>
+            <input type="color" id="color-input" value="#3498db" />
+        </div>
+        <div>
+            <label for="shape-input">Choose shape (0 for circle, 100 for square): </label>
+            <input type="range" id="shape-input" min="0" max="100" value="100" />
+        </div>
+        <div>
+            <label for="size-input">Choose size: </label>
+            <input type="range" id="size-input" min="20" max="100" value="50" />
+        </div>
+        <div>
+            <label for="width-input">Game area width: </label>
+            <input type="range" id="width-input" min="200" max="1200" value="500" />
+        </div>
+        <div>
+            <label for="height-input">Game area height: </label>
+            <input type="range" id="height-input" min="200" max="1200" value="500" />
+        </div>
+        <button id="start-button">Start</button>
+        <div id="score">Score: 0</div>
+        <div id="preview-box"></div>
+    </div>
+    <div id="game-area-container">
+        <div id="game-area"></div>
+    </div>
+    <div id="countdown" style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 3;">Time left: 0</div>
+    <script>
+        const gameArea = document.getElementById('game-area');
+        const scoreDisplay = document.getElementById('score');
+        const timeInput = document.getElementById('time-input');
+        const colorInput = document.getElementById('color-input');
+        const shapeInput = document.getElementById('shape-input');
+        const sizeInput = document.getElementById('size-input');
+        const widthInput = document.getElementById('width-input');
+        const heightInput = document.getElementById('height-input');
+        const startButton = document.getElementById('start-button');
+        const countdownDisplay = document.getElementById('countdown');
+        const previewBox = document.getElementById('preview-box');
+        const dashboard = document.getElementById('dashboard');
+        let score = 0;
+        let countdown;
+
+        function updatePreviewBox() {
+            previewBox.style.backgroundColor = colorInput.value;
+            previewBox.style.width = `${sizeInput.value}px`;
+            previewBox.style.height = `${sizeInput.value}px`;
+            previewBox.style.borderRadius = `${shapeInput.value}%`;
+        }
+
+        function updateGameAreaSize() {
+            gameArea.style.width = `${widthInput.value}px`;
+            gameArea.style.height = `${heightInput.value}px`;
+        }
+
+        function spawnBox() {
+            // Create a new box
+            const box = document.createElement('div');
+            box.classList.add('box');
+            box.style.backgroundColor = colorInput.value;
+
+            // Set random position within game area
+            const boxSize = parseInt(sizeInput.value);
+            const maxX = gameArea.clientWidth - boxSize;
+            const maxY = gameArea.clientHeight - boxSize;
+            const x = Math.floor(Math.random() * maxX);
+            const y = Math.floor(Math.random() * maxY);
+            box.style.left = `${x}px`;
+            box.style.top = `${y}px`;
+            box.style.width = `${boxSize}px`;
+            box.style.height = `${boxSize}px`;
+            box.style.borderRadius = `${shapeInput.value}%`;
+
+            // Add event listener to remove the box on click
+            box.addEventListener('click', () => {
+                score++;
+                scoreDisplay.textContent = `Score: ${score}`;
+                gameArea.removeChild(box);
+                spawnBox();
+            });
+
+            // Add box to the game area
+            gameArea.appendChild(box);
+        }
+
+        function startGame() {
+            // Hide dashboard during the game
+            dashboard.style.display = 'none';
+
+            // Reset score and countdown
+            score = 0;
+            scoreDisplay.textContent = `Score: ${score}`;
+
+            const time = parseInt(timeInput.value);
+            if (isNaN(time) || time <= 0) {
+                alert('Please enter a valid time in seconds.');
+                dashboard.style.display = 'flex';
+                return;
+            }
+
+            countdownDisplay.style.display = 'block';
+            countdownDisplay.textContent = `Time left: ${time}`;
+            let timeLeft = time;
+
+            // Start countdown
+            countdown = setInterval(() => {
+                timeLeft--;
+                countdownDisplay.textContent = `Time left: ${timeLeft}`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    gameArea.innerHTML = '';
+                    alert(`Game over! Your final score is: ${score}`);
+                    // Show dashboard after the game ends
+                    dashboard.style.display = 'flex';
+                    countdownDisplay.style.display = 'block';
+                }
+            }, 1000);
+
+            // Start spawning boxes
+            gameArea.innerHTML = '';
+            spawnBox();
+        }
+
+        colorInput.addEventListener('input', updatePreviewBox);
+        shapeInput.addEventListener('input', updatePreviewBox);
+        sizeInput.addEventListener('input', updatePreviewBox);
+        widthInput.addEventListener('input', updateGameAreaSize);
+        heightInput.addEventListener('input', updateGameAreaSize);
+        startButton.addEventListener('click', startGame);
+
+        // Initialize preview box and game area size
+        updatePreviewBox();
+        updateGameAreaSize();
+    </script>
+</body>
+</html>
